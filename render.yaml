@@ -1,0 +1,27 @@
+# Render Blueprint — Next.js app in ./web (monorepo)
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: darts-training
+    runtime: node
+    region: singapore
+    plan: free
+    buildCommand: cd web && npm install && npm run build
+    startCommand: cd web && npm start
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_CLERK_SIGN_IN_URL
+        sync: false
+      - key: NEXT_PUBLIC_CLERK_SIGN_UP_URL
+        sync: false
+      - key: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false

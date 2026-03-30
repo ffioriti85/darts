@@ -1,0 +1,15 @@
+# Env and secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies and build
+web/node_modules/
+web/.next/
+web/out/
+web/build/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.cursor/
