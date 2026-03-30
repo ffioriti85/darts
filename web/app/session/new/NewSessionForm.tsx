@@ -5,7 +5,7 @@ import { useState } from "react";
 import { AppHeader } from "@/components/layout/AppHeader";
 
 /**
- * Form to start a session with darts-per-round and duration defaults.
+ * Form to start a session with darts-per-round.
  *
  * Args:
  *   None.
@@ -22,7 +22,6 @@ import { AppHeader } from "@/components/layout/AppHeader";
 export default function NewSessionForm() {
   const router = useRouter();
   const [darts, setDarts] = useState(3);
-  const [minutes, setMinutes] = useState(20);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,7 +35,6 @@ export default function NewSessionForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           darts_per_round: darts,
-          duration_minutes: minutes,
         }),
       });
       if (!res.ok) {
@@ -72,20 +70,6 @@ export default function NewSessionForm() {
               max={12}
               value={darts}
               onChange={(e) => setDarts(Number(e.target.value))}
-              className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-4 text-lg text-zinc-100"
-            />
-          </label>
-
-          <label className="block">
-            <span className="text-sm font-medium text-zinc-400">
-              Session duration (minutes)
-            </span>
-            <input
-              type="number"
-              min={1}
-              max={180}
-              value={minutes}
-              onChange={(e) => setMinutes(Number(e.target.value))}
               className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-4 text-lg text-zinc-100"
             />
           </label>

@@ -46,14 +46,13 @@ export async function GET() {
 
 type CreateBody = {
   darts_per_round?: number;
-  duration_minutes?: number;
 };
 
 /**
  * Creates a new training session for the signed-in user.
  *
  * Args:
- *   request: JSON body with optional darts_per_round and duration_minutes.
+ *   request: JSON body with optional darts_per_round.
  *
  * Returns:
  *   Created session row JSON.
@@ -78,7 +77,6 @@ export async function POST(request: Request) {
   }
 
   const darts = Math.min(12, Math.max(1, Number(body.darts_per_round) || 3));
-  const minutes = Math.min(180, Math.max(1, Number(body.duration_minutes) || 20));
 
   try {
     const supabase = createAdminClient();
@@ -87,7 +85,7 @@ export async function POST(request: Request) {
       .insert({
         user_id: userId,
         darts_per_round: darts,
-        duration_minutes: minutes,
+        duration_minutes: 0,
       })
       .select("*")
       .single();

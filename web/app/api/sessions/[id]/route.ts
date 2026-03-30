@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { refreshSessionStats } from "@/lib/supabase/session_stats";
+import { refreshSessionStats, updateShootingPace } from "@/lib/supabase/session_stats";
 import type { TrainingSessionRow } from "@/lib/types/session";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -109,6 +109,11 @@ export async function PATCH(_request: Request, context: Ctx) {
     const ok = await refreshSessionStats(supabase, id);
     if (!ok) {
       return NextResponse.json({ error: "Failed to refresh stats" }, { status: 500 });
+    }
+
+    const paceOk = await updateShootingPace(supabase, id);
+    if (!paceOk) {
+      return NextResponse.json({ error: "Failed to update shooting pace" }, { status: 500 });
     }
 
     const { data: row, error: fetchErr } = await supabase

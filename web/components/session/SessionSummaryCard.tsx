@@ -1,6 +1,6 @@
 "use client";
 
-import type { TrainingSessionRow } from "@/lib/types/session";
+import { formatShootingPace, type TrainingSessionRow } from "@/lib/types/session";
 
 type SessionSummaryCardProps = {
   session: TrainingSessionRow;
@@ -37,6 +37,11 @@ export function SessionSummaryCard({
   session,
   highlight,
 }: SessionSummaryCardProps) {
+  const pace =
+    session.shooting_pace_seconds != null
+      ? formatShootingPace(session.shooting_pace_seconds)
+      : "—";
+
   return (
     <article
       className={[
@@ -56,7 +61,7 @@ export function SessionSummaryCard({
           <span className="text-xs text-amber-400">Open</span>
         )}
       </div>
-      <dl className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
+      <dl className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-3 lg:grid-cols-5">
         <div>
           <dt className="text-zinc-500">Throws</dt>
           <dd className="font-mono text-lg text-zinc-100">{session.total_throws}</dd>
@@ -74,6 +79,10 @@ export function SessionSummaryCard({
           <dd className="font-mono text-lg text-amber-300">
             {session.accuracy.toFixed(1)}%
           </dd>
+        </div>
+        <div>
+          <dt className="text-zinc-500">Pace</dt>
+          <dd className="font-mono text-lg text-sky-300">{pace}</dd>
         </div>
       </dl>
     </article>

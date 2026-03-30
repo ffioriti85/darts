@@ -53,3 +53,63 @@ export async function refreshSessionStats(
   }
   return true;
 }
+
+/**
+ * Sets shooting_pace_seconds = session wall duration / total_throws when ended.
+ *
+ * Args:
+ *   supabase: Admin Supabase client.
+ *   sessionId: Session UUID (must have ended_at set).
+ *
+ * Returns:
+ *   true if update succeeded, false otherwise.
+ *
+ * Side Effects:
+ *   Updates public.sessions.shooting_pace_seconds.
+ *
+ * Concurrency Notes:
+ *   Call after ended_at and throw aggregates are final.
+ */
+export async function updateShootingPace(
+  supabase: SupabaseClient,
+  sessionId: string,
+): Promise<boolean> {
+  const { data: row, error } = await supabase
+    .from("sessions")
+    .select("started_at, ended_at, total_throws")
+    .eq("id", sessionId)
+    .single();
+
+  if (error || !row) {
+    console.error(error);
+    return false;
+  }
+
+  if (!row.ended_at || row.total_throws <= 0) {
+    const { error: up } = await supabase
+      .from("sessions")
+      .update({ shooting_pace_seconds: null })
+      .eq("id", sessionId);
+    if (up) {
+      console.error(up);
+      return false;
+    }
+    return true;
+  }
+
+  const ms =
+    new Date(row.ended_at).getTime() - new Date(row.started_at).getTime();
+  const sec = Math.max(0, ms / 1000);
+  const pace = sec / row.total_throws;
+
+  const { error: upErr } = await supabase
+    .from("sessions")
+    .update({ shooting_pace_seconds: pace })
+    .eq("id", sessionId);
+
+  if (upErr) {
+    console.error(upErr);
+    return false;
+  }
+  return true;
+}

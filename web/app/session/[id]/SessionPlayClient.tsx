@@ -1,48 +1,25 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { DartToggleButton } from "@/components/session/DartToggleButton";
 import { RoundControls } from "@/components/session/RoundControls";
 import { SessionTimer } from "@/components/session/SessionTimer";
-import { StatsDisplay } from "@/components/session/StatsDisplay";
 import {
   clearSessionDraft,
   loadSessionDraft,
   saveSessionDraft,
 } from "@/lib/session_draft";
-import { computeAccuracyPct } from "@/lib/types/session";
 import type { TrainingSessionRow } from "@/lib/types/session";
 
 type Props = {
   initialSession: TrainingSessionRow;
 };
 
-function playTimerEndCue(): void {
-  try {
-    const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!Ctx) return;
-    const ctx = new Ctx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = 880;
-    gain.gain.setValueAtTime(0.12, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.35);
-  } catch {
-    /* ignore */
-  }
-  if (typeof navigator !== "undefined" && navigator.vibrate) {
-    navigator.vibrate([120, 60, 120]);
-  }
-}
-
 /**
- * Mobile-first active session UI: timer, dart toggles, round + end controls.
+ * Mobile-first active session UI: elapsed timer, dart toggles, round + end controls.
+ * Session aggregates are hidden until the user finishes (see /results).
  *
  * Args:
  *   initialSession: Server-loaded row (must be open session).
@@ -51,14 +28,14 @@ function playTimerEndCue(): void {
  *   Full-page client experience.
  *
  * Side Effects:
- *   Calls REST APIs; writes localStorage draft; optional audio/vibration.
+ *   Calls REST APIs; writes localStorage draft.
  *
  * Concurrency Notes:
  *   Disables buttons while `busy` to limit duplicate submissions.
  */
 export default function SessionPlayClient({ initialSession }: Props) {
   const router = useRouter();
-  const [session, setSession] = useState<TrainingSessionRow>(initialSession);
+  const [session] = useState<TrainingSessionRow>(initialSession);
   const [hits, setHits] = useState<boolean[]>(() =>
     Array.from({ length: initialSession.darts_per_round }, () => false),
   );
@@ -73,11 +50,6 @@ export default function SessionPlayClient({ initialSession }: Props) {
   useEffect(() => {
     saveSessionDraft(initialSession.id, hits);
   }, [initialSession.id, hits]);
-
-  const accuracyLive = useMemo(
-    () => computeAccuracyPct(session.total_hits, session.total_throws),
-    [session.total_hits, session.total_throws],
-  );
 
   const toggleDart = useCallback((i: number) => {
     setHits((prev) => {
@@ -98,8 +70,6 @@ export default function SessionPlayClient({ initialSession }: Props) {
       setError(j.error ?? "Could not save round");
       return false;
     }
-    const data = (await res.json()) as { session: TrainingSessionRow };
-    setSession(data.session);
     setError(null);
     return true;
   }, [hits, session.id]);
@@ -135,9 +105,6 @@ export default function SessionPlayClient({ initialSession }: Props) {
           setError(msg || "Could not save final round");
           return;
         }
-      } else {
-        const data = (await r1.json()) as { session: TrainingSessionRow };
-        setSession(data.session);
       }
 
       const r2 = await fetch(`/api/sessions/${session.id}`, { method: "PATCH" });
@@ -166,18 +133,7 @@ export default function SessionPlayClient({ initialSession }: Props) {
           </p>
         ) : null}
 
-        <SessionTimer
-          startedAtIso={session.started_at}
-          durationMinutes={session.duration_minutes}
-          onEnterOvertime={playTimerEndCue}
-        />
-
-        <StatsDisplay
-          totalThrows={session.total_throws}
-          totalHits={session.total_hits}
-          totalMisses={session.total_misses}
-          accuracyPct={accuracyLive}
-        />
+        <SessionTimer startedAtIso={session.started_at} />
 
         <section aria-label="Current round">
           <h2 className="mb-3 text-center text-sm font-medium uppercase tracking-widest text-zinc-500">
