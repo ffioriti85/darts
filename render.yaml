@@ -11,6 +11,9 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
+      # Reason: Render sets production install; Next + Tailwind need devDependencies at build time
+      - key: NPM_CONFIG_PRODUCTION
+        value: "false"
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_CLERK_SIGN_IN_URL
