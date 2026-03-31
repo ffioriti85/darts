@@ -2,7 +2,10 @@ export type TrainingSessionRow = {
   id: string;
   user_id: string;
   darts_per_round: number;
+  /** Legacy; unused for count-up timer. */
   duration_minutes: number;
+  /** Number of rounds at session start that count as warm-up (not in final stats). */
+  warm_up_rounds?: number;
   started_at: string;
   ended_at: string | null;
   total_throws: number;
@@ -11,6 +14,14 @@ export type TrainingSessionRow = {
   accuracy: number;
   /** Seconds per throw: (ended_at - started_at) / total_throws when session is completed. */
   shooting_pace_seconds?: number | null;
+};
+
+export type ThrowRow = {
+  throw_number: number;
+  is_hit: boolean;
+  is_warm_up: boolean;
+  /** Set when loaded from DB; used for time-axis charts. */
+  created_at?: string;
 };
 
 export function computeAccuracyPct(hits: number, throws: number): number {

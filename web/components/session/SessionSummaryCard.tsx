@@ -1,5 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { formatShootingPace, type TrainingSessionRow } from "@/lib/types/session";
 
 type SessionSummaryCardProps = {
@@ -37,10 +40,39 @@ export function SessionSummaryCard({
   session,
   highlight,
 }: SessionSummaryCardProps) {
+  const router = useRouter();
+  const [deleting, setDeleting] = useState(false);
+
   const pace =
     session.shooting_pace_seconds != null
       ? formatShootingPace(session.shooting_pace_seconds)
       : "—";
+
+  async function onDelete() {
+    if (deleting) return;
+    if (!session.ended_at) return;
+
+    const confirmed = window.confirm(
+      "Delete this session? This cannot be undone.",
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/sessions/${session.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const j = (await res.json().catch(() => ({}))) as { error?: string };
+        window.alert(j.error ?? "Could not delete session");
+        return;
+      }
+      // Refresh the server-rendered results list after deletion.
+      router.refresh();
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   return (
     <article
@@ -85,6 +117,26 @@ export function SessionSummaryCard({
           <dd className="font-mono text-lg text-sky-300">{pace}</dd>
         </div>
       </dl>
+      {session.ended_at ? (
+        <div className="mt-4 border-t border-zinc-800 pt-3">
+          <Link
+            href={`/results/${session.id}/graph`}
+            className="text-sm font-medium text-sky-400 hover:text-sky-300"
+          >
+            View hit graph →
+          </Link>
+          <div className="mt-3">
+            <button
+              type="button"
+              disabled={deleting}
+              onClick={onDelete}
+              className="w-full rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-500 disabled:opacity-60"
+            >
+              {deleting ? "Deleting…" : "Delete session"}
+            </button>
+          </div>
+        </div>
+      ) : null}
     </article>
   );
 }

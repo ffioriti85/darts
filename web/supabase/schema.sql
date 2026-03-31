@@ -12,6 +12,7 @@ create table if not exists public.sessions (
   id uuid primary key default gen_random_uuid(),
   user_id text not null,
   darts_per_round integer not null default 3 check (darts_per_round > 0),
+  warm_up_rounds integer not null default 10 check (warm_up_rounds >= 0),
   duration_minutes integer not null default 0 check (duration_minutes >= 0),
   started_at timestamptz not null default now(),
   ended_at timestamptz,
@@ -30,6 +31,7 @@ create table if not exists public.throws (
   session_id uuid not null references public.sessions (id) on delete cascade,
   throw_number integer not null check (throw_number > 0),
   is_hit boolean not null,
+  is_warm_up boolean not null default false,
   created_at timestamptz not null default now(),
   unique (session_id, throw_number)
 );

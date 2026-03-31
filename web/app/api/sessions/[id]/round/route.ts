@@ -91,10 +91,16 @@ export async function POST(request: Request, context: Ctx) {
     }
 
     const startNum = maxRow?.throw_number ? maxRow.throw_number + 1 : 1;
+    const d = row.darts_per_round;
+    const roundIndex = Math.floor((startNum - 1) / d) + 1;
+    const warmUpRounds = row.warm_up_rounds ?? 0;
+    const isWarmUpRound = roundIndex <= warmUpRounds;
+
     const inserts = hits.map((is_hit, i) => ({
       session_id: sessionId,
       throw_number: startNum + i,
       is_hit,
+      is_warm_up: isWarmUpRound,
     }));
 
     const { error: insErr } = await supabase.from("throws").insert(inserts);

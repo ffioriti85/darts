@@ -5,7 +5,7 @@ import { useState } from "react";
 import { AppHeader } from "@/components/layout/AppHeader";
 
 /**
- * Form to start a session with darts-per-round.
+ * Form to start a session with darts-per-round and warm-up round count.
  *
  * Args:
  *   None.
@@ -22,6 +22,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 export default function NewSessionForm() {
   const router = useRouter();
   const [darts, setDarts] = useState(3);
+  const [warmUpRounds, setWarmUpRounds] = useState(10);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,6 +36,7 @@ export default function NewSessionForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           darts_per_round: darts,
+          warm_up_rounds: warmUpRounds,
         }),
       });
       if (!res.ok) {
@@ -70,6 +72,23 @@ export default function NewSessionForm() {
               max={12}
               value={darts}
               onChange={(e) => setDarts(Number(e.target.value))}
+              className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-4 text-lg text-zinc-100"
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-sm font-medium text-zinc-400">
+              Warm-up rounds
+            </span>
+            <p className="mt-1 text-xs text-zinc-500">
+              Not counted in session results (throws, hits, accuracy, pace).
+            </p>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={warmUpRounds}
+              onChange={(e) => setWarmUpRounds(Number(e.target.value))}
               className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-4 text-lg text-zinc-100"
             />
           </label>

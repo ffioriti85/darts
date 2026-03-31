@@ -133,3 +133,65 @@ export async function PATCH(_request: Request, context: Ctx) {
     return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
   }
 }
+
+/**
+ * Deletes a session (and all its throws via cascade).
+ *
+ * Args:
+ *   _request: Unused.
+ *   context: Route params with session id.
+ *
+ * Returns:
+ *   200 JSON { ok: true } or error status.
+ *
+ * Side Effects:
+ *   Deletes from public.sessions; deletes associated public.throws (ON DELETE CASCADE).
+ *
+ * Concurrency Notes:
+ *   Last-write-wins if two deletes race; the second delete becomes a no-op if the row is gone.
+ */
+export async function DELETE(_request: Request, context: Ctx) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await context.params;
+
+  try {
+    const supabase = createAdminClient();
+
+    const { data: existing, error: exErr } = await supabase
+      .from("sessions")
+      .select("id")
+      .eq("id", id)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (exErr) {
+      console.error(exErr);
+      return NextResponse.json({ error: "Database error" }, { status: 500 });
+    }
+
+    if (!existing) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    // Reason for Change: allow users to remove unwanted sessions from their history.
+    const { error: delErr } = await supabase
+      .from("sessions")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", userId);
+
+    if (delErr) {
+      console.error(delErr);
+      return NextResponse.json({ error: "Database error" }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+  }
+}

@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { computeAccuracyPct } from "@/lib/types/session";
 
 /**
- * Recomputes aggregate counters on sessions from throws for a session id.
+ * Recomputes aggregate counters from throws where is_warm_up is false (training only).
  *
  * Args:
  *   supabase: Admin Supabase client.
@@ -23,7 +23,7 @@ export async function refreshSessionStats(
 ): Promise<boolean> {
   const { data: rows, error: selErr } = await supabase
     .from("throws")
-    .select("is_hit")
+    .select("is_hit, is_warm_up")
     .eq("session_id", sessionId);
 
   if (selErr) {
@@ -32,8 +32,9 @@ export async function refreshSessionStats(
   }
 
   const list = rows ?? [];
-  const total = list.length;
-  const hits = list.filter((r) => r.is_hit).length;
+  const training = list.filter((r) => !r.is_warm_up);
+  const total = training.length;
+  const hits = training.filter((r) => r.is_hit).length;
   const misses = total - hits;
   const accuracy = computeAccuracyPct(hits, total);
 
@@ -55,7 +56,7 @@ export async function refreshSessionStats(
 }
 
 /**
- * Sets shooting_pace_seconds = session wall duration / total_throws when ended.
+ * Sets shooting_pace_seconds = session wall duration / training total_throws when ended.
  *
  * Args:
  *   supabase: Admin Supabase client.
